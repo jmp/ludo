@@ -1,0 +1,37 @@
+#
+# Makefile (GNU make) for building Ludo on a Windows system.
+# Using TDM-GCC <http://tdm-gcc.tdragon.net/> is recommended.
+#
+
+CC      := gcc
+TARGET  := bin/ludo.exe
+CFLAGS  := -m32 -O2 -ansi -pedantic -Wall -Wextra -Werror -Wno-unused
+LDFLAGS := -mconsole -mwindows -lmingw32 -llua53 -lSDL2main -lSDL2 \
+	-lSDL2_mixer -lwinmm -limm32 -lole32 -loleaut32 -lversion -static
+RESOBJ  := obj/style.o
+OBJECTS := $(patsubst src/%.c,obj/%.o, $(wildcard src/*.c)) $(RESOBJ)
+RESFILE := src/style.rc
+TESTS   := test/run_tests.exe
+
+$(TARGET): $(OBJECTS)
+	@if not exist bin mkdir bin
+	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
+
+obj/%.o: src/%.c
+	@if not exist obj mkdir obj
+	$(CC) $(CFLAGS) -o $@ -c $< -D'ASSET_DIRECTORY="/foo/bar/"'
+
+$(RESOBJ): $(RESFILE)
+	windres $(RESFILE) -F pe-i386 -o $@
+
+$(TESTS): test/test.c
+	$(CC) $(CFLAGS) $(TEST_OBJS) -Isrc -o $@ $< $(LDFLAGS)
+
+run_tests:
+	$(TESTS)
+
+clean:
+	@if exist obj rmdir /s /q obj
+	@if exist $(subst /,\,$(TARGET)) del $(subst /,\,$(TARGET))
+
+.PHONY: run_tests clean
